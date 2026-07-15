@@ -1,4 +1,4 @@
-# mini-vLLM
+# LLM Inference Engine
 
 A from-scratch learning project for building a small LLM inference engine incrementally.
 
