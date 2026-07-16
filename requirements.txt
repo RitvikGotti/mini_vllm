@@ -1,2 +1,2 @@
-# Runtime dependencies will be added with the first implementation milestone.
+numpy>=1.26
 
