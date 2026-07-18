@@ -9,6 +9,7 @@ from llm_inference_engine.engine.token_selection import GreedyTokenSelector
 from llm_inference_engine.model.tiny_model import (
     TinyTransformerModel,
     TinyTransformerWeights,
+    TransformerLayerWeights,
 )
 from llm_inference_engine.model.tokenizer import WhitespaceTokenizer
 from llm_inference_engine.utils.config import ModelConfig
@@ -33,17 +34,7 @@ class TinyInferenceEngineTests(unittest.TestCase):
             [[0.0, 0.0], [0.1, 0.0], [0.0, 0.1]],
             dtype=np.float32,
         )
-        weights = TinyTransformerWeights(
-            token_embedding=np.array(
-                [
-                    [1.0, 0.0],
-                    [0.0, 1.0],
-                    [1.0, 1.0],
-                    [0.5, 0.5],
-                ],
-                dtype=np.float32,
-            ),
-            position_embedding=position_embedding,
+        layer_weights = TransformerLayerWeights(
             query=identity,
             key=identity,
             value=identity,
@@ -65,6 +56,19 @@ class TinyInferenceEngineTests(unittest.TestCase):
             ),
             ffn_norm_scale=np.ones(2, dtype=np.float32),
             ffn_norm_bias=np.zeros(2, dtype=np.float32),
+        )
+        weights = TinyTransformerWeights(
+            token_embedding=np.array(
+                [
+                    [1.0, 0.0],
+                    [0.0, 1.0],
+                    [1.0, 1.0],
+                    [0.5, 0.5],
+                ],
+                dtype=np.float32,
+            ),
+            position_embedding=position_embedding,
+            layers=(layer_weights,),
             final_norm_scale=np.ones(2, dtype=np.float32),
             final_norm_bias=np.zeros(2, dtype=np.float32),
             lm_head=np.array(

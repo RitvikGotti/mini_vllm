@@ -1,4 +1,4 @@
-"""Connected one-layer, single-head transformer language model."""
+"""Connected multi-layer, single-head transformer language model."""
 
 from dataclasses import dataclass
 
@@ -13,15 +13,14 @@ from llm_inference_engine.model.positions import PositionEmbedding
 from llm_inference_engine.model.transformer_block import (
     SingleHeadTransformerBlock,
 )
+from llm_inference_engine.model.transformer_stack import TransformerStack
 from llm_inference_engine.utils.config import ModelConfig
 
 
 @dataclass(frozen=True)
-class TinyTransformerWeights:
-    """Collect the learned tensors required by the one-layer tiny model."""
+class TransformerLayerWeights:
+    """Collect the learned tensors belonging to one transformer layer."""
 
-    token_embedding: NDArray[np.floating]
-    position_embedding: NDArray[np.floating]
     query: NDArray[np.floating]
     key: NDArray[np.floating]
     value: NDArray[np.floating]
@@ -32,13 +31,22 @@ class TinyTransformerWeights:
     ffn_output: NDArray[np.floating]
     ffn_norm_scale: NDArray[np.floating]
     ffn_norm_bias: NDArray[np.floating]
+
+
+@dataclass(frozen=True)
+class TinyTransformerWeights:
+    """Collect embedding, per-layer, normalization, and output tensors."""
+
+    token_embedding: NDArray[np.floating]
+    position_embedding: NDArray[np.floating]
+    layers: tuple[TransformerLayerWeights, ...]
     final_norm_scale: NDArray[np.floating]
     final_norm_bias: NDArray[np.floating]
     lm_head: NDArray[np.floating]
 
 
 class TinyTransformerModel:
-    """Run token IDs through one single-head transformer layer to logits."""
+    """Run token IDs through single-head transformer layers to logits."""
 
     def __init__(
         self,
@@ -47,9 +55,6 @@ class TinyTransformerModel:
         norm_epsilon: float = 1e-5,
     ) -> None:
         """Create the connected tiny model from configuration and weights."""
-        if config.num_layers != 1:
-            raise ValueError("TinyTransformerModel requires num_layers=1.")
-
         if config.num_attention_heads != 1:
             raise ValueError(
                 "TinyTransformerModel requires num_attention_heads=1."
@@ -64,19 +69,26 @@ class TinyTransformerModel:
             token_embedding,
             position_embedding,
         )
-        self._transformer_block = SingleHeadTransformerBlock(
+        transformer_blocks = tuple(
+            SingleHeadTransformerBlock(
+                config,
+                query_weights=layer.query,
+                key_weights=layer.key,
+                value_weights=layer.value,
+                attention_output_weights=layer.attention_output,
+                attention_norm_scale=layer.attention_norm_scale,
+                attention_norm_bias=layer.attention_norm_bias,
+                ffn_input_weights=layer.ffn_input,
+                ffn_output_weights=layer.ffn_output,
+                ffn_norm_scale=layer.ffn_norm_scale,
+                ffn_norm_bias=layer.ffn_norm_bias,
+                norm_epsilon=norm_epsilon,
+            )
+            for layer in weights.layers
+        )
+        self._transformer_stack = TransformerStack(
             config,
-            query_weights=weights.query,
-            key_weights=weights.key,
-            value_weights=weights.value,
-            attention_output_weights=weights.attention_output,
-            attention_norm_scale=weights.attention_norm_scale,
-            attention_norm_bias=weights.attention_norm_bias,
-            ffn_input_weights=weights.ffn_input,
-            ffn_output_weights=weights.ffn_output,
-            ffn_norm_scale=weights.ffn_norm_scale,
-            ffn_norm_bias=weights.ffn_norm_bias,
-            norm_epsilon=norm_epsilon,
+            transformer_blocks,
         )
         self._final_norm = LayerNorm(
             config,
@@ -96,7 +108,7 @@ class TinyTransformerModel:
             token_ids,
             position_offset,
         )
-        hidden_states = self._transformer_block.forward(hidden_states)
+        hidden_states = self._transformer_stack.forward(hidden_states)
         hidden_states = self._final_norm.forward(hidden_states)
 
         return self._lm_head.forward(hidden_states)
