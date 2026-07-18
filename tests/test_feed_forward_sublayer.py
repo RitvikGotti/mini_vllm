@@ -1,4 +1,4 @@
-"""Integration tests for the FFN with a residual connection."""
+"""Integration tests for the pre-norm FFN residual sublayer."""
 
 import unittest
 
@@ -11,10 +11,10 @@ from llm_inference_engine.utils.config import ModelConfig
 
 
 class FeedForwardSublayerTests(unittest.TestCase):
-    """Verify position-wise FFN updates are added to their inputs."""
+    """Verify normalized FFN updates are added to original inputs."""
 
-    def test_forward_adds_ffn_update_to_original_hidden_states(self) -> None:
-        """The residual path preserves input while the FFN adds an update."""
+    def test_forward_uses_pre_norm_and_preserves_residual_input(self) -> None:
+        """The FFN receives normalized states while residual retains input."""
         config = ModelConfig(
             vocab_size=4,
             hidden_size=2,
@@ -35,6 +35,8 @@ class FeedForwardSublayerTests(unittest.TestCase):
             config,
             input_weights,
             output_weights,
+            norm_scale=np.ones(2, dtype=np.float32),
+            norm_bias=np.zeros(2, dtype=np.float32),
         )
         hidden_states = np.array(
             [[2.0, 1.0], [1.0, 2.0]],
@@ -43,7 +45,9 @@ class FeedForwardSublayerTests(unittest.TestCase):
 
         output = sublayer.forward(hidden_states)
 
-        np.testing.assert_array_equal(
+        np.testing.assert_allclose(
             output,
-            np.array([[4.0, 5.0], [5.0, 8.0]], dtype=np.float32),
+            np.array([[8.0, 9.0], [7.0, 10.0]], dtype=np.float32),
+            rtol=1e-4,
+            atol=1e-4,
         )
