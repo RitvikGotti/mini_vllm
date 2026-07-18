@@ -24,7 +24,7 @@ class PositionEmbedding:
         if not np.issubdtype(weights.dtype, np.floating):
             raise ValueError("position weights must use a floating-point dtype.")
 
-        self._position_weights = weights
+        self._weights = weights
 
     def forward(
         self, sequence_length: int, offset: int = 0
@@ -37,8 +37,8 @@ class PositionEmbedding:
             raise ValueError("offset must be non-negative.")
 
         end_position = offset + sequence_length
-        if end_position > self._position_weights.shape[0]:
+        if end_position > self._weights.shape[0]:
             raise ValueError("requested positions exceed max_sequence_length.")
 
-        return self._position_weights[offset:end_position]
+        return self._weights[offset:end_position]
 

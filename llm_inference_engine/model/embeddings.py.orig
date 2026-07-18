@@ -24,7 +24,7 @@ class TokenEmbedding:
         if not np.issubdtype(weights.dtype, np.floating):
             raise ValueError("embedding weights must use a floating-point dtype.")
 
-        self._token_weights = weights
+        self._weights = weights
 
     def forward(self, token_ids: NDArray[np.integer]) -> NDArray[np.floating]:
         """Return one hidden-state vector for each one-dimensional token ID."""
@@ -36,9 +36,9 @@ class TokenEmbedding:
 
         if token_ids.size and (
             np.any(token_ids < 0)
-            or np.any(token_ids >= self._token_weights.shape[0])
+            or np.any(token_ids >= self._weights.shape[0])
         ):
             raise ValueError("token_ids must be valid vocabulary IDs.")
 
-        return self._token_weights[token_ids]
+        return self._weights[token_ids]
 
