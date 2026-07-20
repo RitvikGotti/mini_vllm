@@ -104,3 +104,41 @@ class FeedForwardNetworkTests(unittest.TestCase):
             rtol=1e-5,
             atol=1e-5,
         )
+
+    def test_forward_adds_both_projection_biases(self) -> None:
+        """The expansion and output projections each add a learned bias."""
+        feed_forward = FeedForwardNetwork(
+            self.config,
+            np.zeros((2, 3), dtype=np.float32),
+            np.array(
+                [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+                dtype=np.float32,
+            ),
+            input_bias=np.array(
+                [1.0, -1.0, 2.0],
+                dtype=np.float32,
+            ),
+            output_bias=np.array(
+                [0.5, -0.5],
+                dtype=np.float32,
+            ),
+        )
+
+        output = feed_forward.forward(
+            np.zeros((1, 2), dtype=np.float32)
+        )
+
+        np.testing.assert_array_equal(
+            output,
+            np.array([[3.5, 1.5]], dtype=np.float32),
+        )
+
+    def test_wrong_bias_shape_raises_error(self) -> None:
+        """Each bias must match the width of its projection output."""
+        with self.assertRaises(ValueError):
+            FeedForwardNetwork(
+                self.config,
+                self.input_weights,
+                self.output_weights,
+                input_bias=np.zeros(2, dtype=np.float32),
+            )
