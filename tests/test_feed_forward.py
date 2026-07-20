@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 
+from llm_inference_engine.model.activations import gelu_new
 from llm_inference_engine.model.feed_forward import FeedForwardNetwork
 from llm_inference_engine.utils.config import ModelConfig
 
@@ -77,3 +78,29 @@ class FeedForwardNetworkTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             feed_forward.forward(np.ones((2, 3), dtype=np.float32))
+
+    def test_forward_uses_injected_activation_function(self) -> None:
+        """An FFN can use GPT-2 GELU instead of its default ReLU."""
+        feed_forward = FeedForwardNetwork(
+            self.config,
+            np.array(
+                [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+                dtype=np.float32,
+            ),
+            np.array(
+                [[1.0, 0.0], [0.0, 0.0], [0.0, 0.0]],
+                dtype=np.float32,
+            ),
+            activation=gelu_new,
+        )
+
+        output = feed_forward.forward(
+            np.array([[-1.0, 0.0]], dtype=np.float32)
+        )
+
+        np.testing.assert_allclose(
+            output,
+            np.array([[-0.158808, 0.0]], dtype=np.float32),
+            rtol=1e-5,
+            atol=1e-5,
+        )

@@ -3,6 +3,10 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from llm_inference_engine.model.activations import (
+    ActivationFunction,
+    relu,
+)
 from llm_inference_engine.utils.config import ModelConfig
 
 
@@ -14,8 +18,9 @@ class FeedForwardNetwork:
         config: ModelConfig,
         input_weights: NDArray[np.floating],
         output_weights: NDArray[np.floating],
+        activation: ActivationFunction = relu,
     ) -> None:
-        """Create a feed-forward network from its two learned weight matrices."""
+        """Create an FFN from learned matrices and an activation function."""
         expected_input_shape = (
             config.hidden_size,
             config.ffn_hidden_size,
@@ -38,6 +43,7 @@ class FeedForwardNetwork:
 
         self._input_weights = input_weights
         self._output_weights = output_weights
+        self._activation = activation
 
     def forward(
         self, hidden_states: NDArray[np.floating]
@@ -55,7 +61,7 @@ class FeedForwardNetwork:
             raise ValueError("hidden_states must use a floating-point dtype.")
 
         expanded_states = hidden_states @ self._input_weights
-        activated_states = np.maximum(expanded_states, 0.0)
+        activated_states = self._activation(expanded_states)
 
         return activated_states @ self._output_weights
 
