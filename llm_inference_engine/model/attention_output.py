@@ -13,9 +13,11 @@ class AttentionOutputProjection:
         self,
         config: ModelConfig,
         weights: NDArray[np.floating],
+        bias: NDArray[np.floating] | None = None,
     ) -> None:
-        """Create an attention output projection from learned weights."""
+        """Create an attention output projection from weights and bias."""
         expected_shape = (config.hidden_size, config.hidden_size)
+        expected_bias_shape = (config.hidden_size,)
 
         if weights.shape != expected_shape:
             raise ValueError(
@@ -29,6 +31,24 @@ class AttentionOutputProjection:
             )
 
         self._weights = weights
+        if bias is None:
+            self._bias = np.zeros(
+                expected_bias_shape,
+                dtype=weights.dtype,
+            )
+        else:
+            if bias.shape != expected_bias_shape:
+                raise ValueError(
+                    "attention output bias must have shape "
+                    f"{expected_bias_shape}, got {bias.shape}."
+                )
+
+            if not np.issubdtype(bias.dtype, np.floating):
+                raise ValueError(
+                    "attention output bias must use a floating-point dtype."
+                )
+
+            self._bias = bias
 
     def forward(
         self, context: NDArray[np.floating]
@@ -45,4 +65,4 @@ class AttentionOutputProjection:
         if not np.issubdtype(context.dtype, np.floating):
             raise ValueError("context must use a floating-point dtype.")
 
-        return context @ self._weights
+        return context @ self._weights + self._bias

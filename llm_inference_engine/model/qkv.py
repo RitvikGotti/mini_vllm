@@ -26,9 +26,13 @@ class QKVProjection:
         query_weights: NDArray[np.floating],
         key_weights: NDArray[np.floating],
         value_weights: NDArray[np.floating],
+        query_bias: NDArray[np.floating] | None = None,
+        key_bias: NDArray[np.floating] | None = None,
+        value_bias: NDArray[np.floating] | None = None,
     ) -> None:
-        """Create Q, K, and V projections from learned weight matrices."""
+        """Create Q, K, and V projections from learned weights and biases."""
         expected_shape = (config.hidden_size, config.hidden_size)
+        expected_bias_shape = (config.hidden_size,)
 
         self._validate_weights("query_weights", query_weights, expected_shape)
         self._validate_weights("key_weights", key_weights, expected_shape)
@@ -37,6 +41,24 @@ class QKVProjection:
         self._query_weights = query_weights
         self._key_weights = key_weights
         self._value_weights = value_weights
+        self._query_bias = self._prepare_bias(
+            "query_bias",
+            query_bias,
+            query_weights,
+            expected_bias_shape,
+        )
+        self._key_bias = self._prepare_bias(
+            "key_bias",
+            key_bias,
+            key_weights,
+            expected_bias_shape,
+        )
+        self._value_bias = self._prepare_bias(
+            "value_bias",
+            value_bias,
+            value_weights,
+            expected_bias_shape,
+        )
 
     def forward(self, hidden_states: NDArray[np.floating]) -> QueryKeyValue:
         """Return Q, K, and V projections for two-dimensional hidden states."""
@@ -52,9 +74,9 @@ class QKVProjection:
             raise ValueError("hidden_states must use a floating-point dtype.")
 
         return QueryKeyValue(
-            query=hidden_states @ self._query_weights,
-            key=hidden_states @ self._key_weights,
-            value=hidden_states @ self._value_weights,
+            query=hidden_states @ self._query_weights + self._query_bias,
+            key=hidden_states @ self._key_weights + self._key_bias,
+            value=hidden_states @ self._value_weights + self._value_bias,
         )
 
     @staticmethod
@@ -72,3 +94,23 @@ class QKVProjection:
         if not np.issubdtype(weights.dtype, np.floating):
             raise ValueError(f"{name} must use a floating-point dtype.")
 
+    @staticmethod
+    def _prepare_bias(
+        name: str,
+        bias: NDArray[np.floating] | None,
+        weights: NDArray[np.floating],
+        expected_shape: tuple[int],
+    ) -> NDArray[np.floating]:
+        """Return a validated bias or a zero bias for compatibility."""
+        if bias is None:
+            return np.zeros(expected_shape, dtype=weights.dtype)
+
+        if bias.shape != expected_shape:
+            raise ValueError(
+                f"{name} must have shape {expected_shape}, got {bias.shape}."
+            )
+
+        if not np.issubdtype(bias.dtype, np.floating):
+            raise ValueError(f"{name} must use a floating-point dtype.")
+
+        return bias

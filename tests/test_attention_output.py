@@ -69,3 +69,29 @@ class AttentionOutputProjectionTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             projection.forward(np.ones(2, dtype=np.float32))
+
+    def test_forward_adds_output_projection_bias(self) -> None:
+        """The learned output bias is added to every context row."""
+        projection = AttentionOutputProjection(
+            self.config,
+            np.eye(2, dtype=np.float32),
+            bias=np.array([0.5, -1.0], dtype=np.float32),
+        )
+
+        output = projection.forward(
+            np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+        )
+
+        np.testing.assert_array_equal(
+            output,
+            np.array([[1.5, 1.0], [3.5, 3.0]], dtype=np.float32),
+        )
+
+    def test_wrong_bias_shape_raises_error(self) -> None:
+        """The output bias must match the model hidden width."""
+        with self.assertRaises(ValueError):
+            AttentionOutputProjection(
+                self.config,
+                np.eye(2, dtype=np.float32),
+                bias=np.zeros(3, dtype=np.float32),
+            )

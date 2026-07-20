@@ -93,3 +93,44 @@ class QKVProjectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             projection.forward(np.ones(2, dtype=np.float32))
 
+    def test_forward_adds_independent_projection_biases(self) -> None:
+        """Q, K, and V each add their own bias to every token row."""
+        zeros = np.zeros((2, 2), dtype=np.float32)
+        projection = QKVProjection(
+            self.config,
+            zeros,
+            zeros,
+            zeros,
+            query_bias=np.array([1.0, 2.0], dtype=np.float32),
+            key_bias=np.array([-1.0, 0.5], dtype=np.float32),
+            value_bias=np.array([0.25, -0.25], dtype=np.float32),
+        )
+
+        qkv = projection.forward(
+            np.zeros((2, 2), dtype=np.float32)
+        )
+
+        np.testing.assert_array_equal(
+            qkv.query,
+            np.array([[1.0, 2.0], [1.0, 2.0]], dtype=np.float32),
+        )
+        np.testing.assert_array_equal(
+            qkv.key,
+            np.array([[-1.0, 0.5], [-1.0, 0.5]], dtype=np.float32),
+        )
+        np.testing.assert_array_equal(
+            qkv.value,
+            np.array([[0.25, -0.25], [0.25, -0.25]], dtype=np.float32),
+        )
+
+    def test_wrong_bias_shape_raises_error(self) -> None:
+        """Each QKV bias must match the model hidden width."""
+        with self.assertRaises(ValueError):
+            QKVProjection(
+                self.config,
+                self.query_weights,
+                self.key_weights,
+                self.value_weights,
+                query_bias=np.zeros(3, dtype=np.float32),
+            )
+
