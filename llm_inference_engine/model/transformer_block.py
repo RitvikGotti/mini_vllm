@@ -3,6 +3,10 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from llm_inference_engine.model.activations import (
+    ActivationFunction,
+    relu,
+)
 from llm_inference_engine.model.attention_sublayer import (
     SingleHeadAttentionSublayer,
 )
@@ -29,6 +33,13 @@ class SingleHeadTransformerBlock:
         ffn_norm_scale: NDArray[np.floating],
         ffn_norm_bias: NDArray[np.floating],
         norm_epsilon: float = 1e-5,
+        query_bias: NDArray[np.floating] | None = None,
+        key_bias: NDArray[np.floating] | None = None,
+        value_bias: NDArray[np.floating] | None = None,
+        attention_output_bias: NDArray[np.floating] | None = None,
+        ffn_input_bias: NDArray[np.floating] | None = None,
+        ffn_output_bias: NDArray[np.floating] | None = None,
+        ffn_activation: ActivationFunction = relu,
     ) -> None:
         """Create one pre-norm transformer block from learned parameters."""
         self._attention_sublayer = SingleHeadAttentionSublayer(
@@ -40,6 +51,10 @@ class SingleHeadTransformerBlock:
             attention_norm_scale,
             attention_norm_bias,
             norm_epsilon,
+            query_bias,
+            key_bias,
+            value_bias,
+            attention_output_bias,
         )
         self._feed_forward_sublayer = FeedForwardSublayer(
             config,
@@ -48,6 +63,9 @@ class SingleHeadTransformerBlock:
             ffn_norm_scale,
             ffn_norm_bias,
             norm_epsilon,
+            input_bias=ffn_input_bias,
+            output_bias=ffn_output_bias,
+            activation=ffn_activation,
         )
 
     def forward(

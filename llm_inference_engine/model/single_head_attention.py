@@ -25,8 +25,12 @@ class SingleHeadSelfAttention:
         key_weights: NDArray[np.floating],
         value_weights: NDArray[np.floating],
         output_weights: NDArray[np.floating],
+        query_bias: NDArray[np.floating] | None = None,
+        key_bias: NDArray[np.floating] | None = None,
+        value_bias: NDArray[np.floating] | None = None,
+        output_bias: NDArray[np.floating] | None = None,
     ) -> None:
-        """Create single-head attention from its learned projection weights."""
+        """Create single-head attention from its learned projections."""
         if config.num_attention_heads != 1:
             raise ValueError(
                 "SingleHeadSelfAttention requires num_attention_heads=1."
@@ -37,6 +41,9 @@ class SingleHeadSelfAttention:
             query_weights,
             key_weights,
             value_weights,
+            query_bias,
+            key_bias,
+            value_bias,
         )
         self._score_computer = AttentionScore()
         self._score_scaler = AttentionScoreScaler(config.head_dim)
@@ -46,6 +53,7 @@ class SingleHeadSelfAttention:
         self._output_projection = AttentionOutputProjection(
             config,
             output_weights,
+            output_bias,
         )
 
     def forward(

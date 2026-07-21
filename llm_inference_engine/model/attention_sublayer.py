@@ -24,6 +24,10 @@ class SingleHeadAttentionSublayer:
         norm_scale: NDArray[np.floating],
         norm_bias: NDArray[np.floating],
         norm_epsilon: float = 1e-5,
+        query_bias: NDArray[np.floating] | None = None,
+        key_bias: NDArray[np.floating] | None = None,
+        value_bias: NDArray[np.floating] | None = None,
+        output_bias: NDArray[np.floating] | None = None,
     ) -> None:
         """Create a pre-norm attention sublayer from learned parameters."""
         self._normalization = LayerNorm(
@@ -38,6 +42,10 @@ class SingleHeadAttentionSublayer:
             key_weights,
             value_weights,
             output_weights,
+            query_bias,
+            key_bias,
+            value_bias,
+            output_bias,
         )
         self._residual = ResidualConnection()
 

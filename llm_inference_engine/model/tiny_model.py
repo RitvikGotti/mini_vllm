@@ -5,6 +5,10 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
+from llm_inference_engine.model.activations import (
+    ActivationFunction,
+    relu,
+)
 from llm_inference_engine.model.embeddings import TokenEmbedding
 from llm_inference_engine.model.input_embeddings import InputEmbedding
 from llm_inference_engine.model.lm_head import LanguageModelHead
@@ -31,6 +35,12 @@ class TransformerLayerWeights:
     ffn_output: NDArray[np.floating]
     ffn_norm_scale: NDArray[np.floating]
     ffn_norm_bias: NDArray[np.floating]
+    query_bias: NDArray[np.floating] | None = None
+    key_bias: NDArray[np.floating] | None = None
+    value_bias: NDArray[np.floating] | None = None
+    attention_output_bias: NDArray[np.floating] | None = None
+    ffn_input_bias: NDArray[np.floating] | None = None
+    ffn_output_bias: NDArray[np.floating] | None = None
 
 
 @dataclass(frozen=True)
@@ -53,6 +63,7 @@ class TinyTransformerModel:
         config: ModelConfig,
         weights: TinyTransformerWeights,
         norm_epsilon: float = 1e-5,
+        ffn_activation: ActivationFunction = relu,
     ) -> None:
         """Create the connected tiny model from configuration and weights."""
         if config.num_attention_heads != 1:
@@ -83,6 +94,13 @@ class TinyTransformerModel:
                 ffn_norm_scale=layer.ffn_norm_scale,
                 ffn_norm_bias=layer.ffn_norm_bias,
                 norm_epsilon=norm_epsilon,
+                query_bias=layer.query_bias,
+                key_bias=layer.key_bias,
+                value_bias=layer.value_bias,
+                attention_output_bias=layer.attention_output_bias,
+                ffn_input_bias=layer.ffn_input_bias,
+                ffn_output_bias=layer.ffn_output_bias,
+                ffn_activation=ffn_activation,
             )
             for layer in weights.layers
         )

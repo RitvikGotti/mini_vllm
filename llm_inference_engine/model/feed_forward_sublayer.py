@@ -3,6 +3,10 @@
 import numpy as np
 from numpy.typing import NDArray
 
+from llm_inference_engine.model.activations import (
+    ActivationFunction,
+    relu,
+)
 from llm_inference_engine.model.feed_forward import FeedForwardNetwork
 from llm_inference_engine.model.normalization import LayerNorm
 from llm_inference_engine.model.residual import ResidualConnection
@@ -20,6 +24,9 @@ class FeedForwardSublayer:
         norm_scale: NDArray[np.floating],
         norm_bias: NDArray[np.floating],
         norm_epsilon: float = 1e-5,
+        input_bias: NDArray[np.floating] | None = None,
+        output_bias: NDArray[np.floating] | None = None,
+        activation: ActivationFunction = relu,
     ) -> None:
         """Create a pre-norm FFN sublayer from learned parameters."""
         self._normalization = LayerNorm(
@@ -32,6 +39,9 @@ class FeedForwardSublayer:
             config,
             input_weights,
             output_weights,
+            activation=activation,
+            input_bias=input_bias,
+            output_bias=output_bias,
         )
         self._residual = ResidualConnection()
 

@@ -117,3 +117,44 @@ class TinyTransformerModelTests(unittest.TestCase):
         logits = model.forward(np.array([0, 1, 2], dtype=np.int64))
 
         self.assertEqual(logits.shape, (3, 4))
+
+    def test_forward_routes_activation_to_every_layer(self) -> None:
+        """The model-level FFN activation reaches the transformer block."""
+        activation_calls = 0
+
+        def recording_relu(values: np.ndarray) -> np.ndarray:
+            """Count calls while preserving the running example's ReLU."""
+            nonlocal activation_calls
+            activation_calls += 1
+            return np.maximum(values, 0.0)
+
+        config = replace(self.config, num_layers=2)
+        weights = replace(
+            self.weights,
+            layers=(self.layer_weights, self.layer_weights),
+        )
+        model = TinyTransformerModel(
+            config,
+            weights,
+            ffn_activation=recording_relu,
+        )
+
+        model.forward(np.array([0, 1, 2], dtype=np.int64))
+
+        self.assertEqual(activation_calls, 2)
+
+    def test_forward_routes_layer_biases_into_attention(self) -> None:
+        """A layer output bias changes the model's selected next token."""
+        biased_layer = replace(
+            self.layer_weights,
+            attention_output_bias=np.array(
+                [5.0, 0.0],
+                dtype=np.float32,
+            ),
+        )
+        weights = replace(self.weights, layers=(biased_layer,))
+        model = TinyTransformerModel(self.config, weights)
+
+        logits = model.forward(np.array([0, 1, 2], dtype=np.int64))
+
+        self.assertEqual(int(np.argmax(logits[-1])), 0)
