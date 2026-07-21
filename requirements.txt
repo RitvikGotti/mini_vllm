@@ -1,2 +1,4 @@
 numpy>=1.26
+regex>=2024.5.15
+safetensors>=0.4.3
 

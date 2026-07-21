@@ -4,7 +4,7 @@ import numpy as np
 
 from llm_inference_engine.engine.token_selection import GreedyTokenSelector
 from llm_inference_engine.model.tiny_model import TinyTransformerModel
-from llm_inference_engine.model.tokenizer import WhitespaceTokenizer
+from llm_inference_engine.model.tokenizer import Tokenizer
 
 
 class TinyInferenceEngine:
@@ -12,7 +12,7 @@ class TinyInferenceEngine:
 
     def __init__(
         self,
-        tokenizer: WhitespaceTokenizer,
+        tokenizer: Tokenizer,
         model: TinyTransformerModel,
         token_selector: GreedyTokenSelector,
     ) -> None:

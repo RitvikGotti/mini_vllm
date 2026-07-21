@@ -8,7 +8,17 @@ version = "0.1.0"
 description = "A from-scratch learning project for LLM inference"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.26"]
+dependencies = [
+    "numpy>=1.26",
+    "regex>=2024.5.15",
+    "safetensors>=0.4.3",
+]
+
+[project.optional-dependencies]
+reference = [
+    "torch>=2.2,<3",
+    "transformers>=4.40,<5",
+]
 
 [tool.setuptools.packages.find]
 include = ["llm_inference_engine*"]

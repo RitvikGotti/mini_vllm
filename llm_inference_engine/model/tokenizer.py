@@ -1,6 +1,19 @@
 """A minimal tokenizer for early inference-engine milestones."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from typing import Protocol
+
+
+class Tokenizer(Protocol):
+    """Describe the text-to-token interface required by inference."""
+
+    def encode(self, text: str) -> list[int]:
+        """Return token IDs representing text."""
+        ...
+
+    def decode(self, token_ids: Sequence[int]) -> str:
+        """Return text represented by token IDs."""
+        ...
 
 
 class WhitespaceTokenizer:
@@ -33,7 +46,7 @@ class WhitespaceTokenizer:
 
         return token_ids
 
-    def decode(self, token_ids: list[int]) -> str:
+    def decode(self, token_ids: Sequence[int]) -> str:
         """Return whitespace-delimited text for vocabulary token IDs."""
         tokens: list[str] = []
 
