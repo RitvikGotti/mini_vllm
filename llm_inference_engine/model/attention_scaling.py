@@ -18,8 +18,10 @@ class AttentionScoreScaler:
 
     def forward(self, raw_scores: NDArray[np.floating]) -> NDArray[np.floating]:
         """Return raw attention scores divided by the configured scale."""
-        if raw_scores.ndim != 2:
-            raise ValueError("raw_scores must be a two-dimensional array.")
+        if raw_scores.ndim not in (2, 3):
+            raise ValueError(
+                "raw_scores must be a two- or three-dimensional array."
+            )
 
         if not np.issubdtype(raw_scores.dtype, np.floating):
             raise ValueError("raw_scores must use a floating-point dtype.")

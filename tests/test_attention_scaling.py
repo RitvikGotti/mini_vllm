@@ -30,8 +30,8 @@ class AttentionScoreScalerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             AttentionScoreScaler(head_dim=0)
 
-    def test_non_two_dimensional_scores_raise_error(self) -> None:
-        """Scaling operates on a query-by-key score matrix."""
+    def test_non_score_matrix_or_head_batch_raises_error(self) -> None:
+        """Scaling requires one score matrix or a batch of head matrices."""
         scaler = AttentionScoreScaler(head_dim=2)
 
         with self.assertRaises(ValueError):
@@ -44,3 +44,26 @@ class AttentionScoreScalerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             scaler.forward(np.ones((2, 2), dtype=np.int64))
 
+    def test_forward_scales_every_attention_head(self) -> None:
+        """The same head-dimension scale applies to every head matrix."""
+        scaler = AttentionScoreScaler(head_dim=4)
+        raw_scores = np.array(
+            [
+                [[2.0, 4.0], [6.0, 8.0]],
+                [[10.0, 12.0], [14.0, 16.0]],
+            ],
+            dtype=np.float32,
+        )
+
+        scaled_scores = scaler.forward(raw_scores)
+
+        np.testing.assert_array_equal(
+            scaled_scores,
+            np.array(
+                [
+                    [[1.0, 2.0], [3.0, 4.0]],
+                    [[5.0, 6.0], [7.0, 8.0]],
+                ],
+                dtype=np.float32,
+            ),
+        )

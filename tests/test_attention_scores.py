@@ -4,7 +4,9 @@ import unittest
 
 import numpy as np
 
+from llm_inference_engine.model.attention_heads import AttentionHeadSplitter
 from llm_inference_engine.model.attention_scores import AttentionScore
+from llm_inference_engine.utils.config import ModelConfig
 
 
 class AttentionScoreTests(unittest.TestCase):
@@ -53,3 +55,51 @@ class AttentionScoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.score_computer.forward(query, key)
 
+    def test_forward_computes_scores_independently_for_each_head(self) -> None:
+        """Every attention head receives its own query-by-key score matrix."""
+        config = ModelConfig(
+            vocab_size=4,
+            hidden_size=2,
+            num_layers=1,
+            num_attention_heads=2,
+            ffn_hidden_size=4,
+            max_sequence_length=8,
+        )
+        projected_states = np.array(
+            [[1.0, 0.0], [0.1, 1.0], [1.0, 1.1]],
+            dtype=np.float32,
+        )
+        split_states = AttentionHeadSplitter(config).forward(
+            projected_states
+        )
+
+        scores = self.score_computer.forward(
+            split_states,
+            split_states,
+        )
+
+        expected = np.array(
+            [
+                [
+                    [1.0, 0.1, 1.0],
+                    [0.1, 0.01, 0.1],
+                    [1.0, 0.1, 1.0],
+                ],
+                [
+                    [0.0, 0.0, 0.0],
+                    [0.0, 1.0, 1.1],
+                    [0.0, 1.1, 1.21],
+                ],
+            ],
+            dtype=np.float32,
+        )
+        np.testing.assert_allclose(scores, expected, rtol=1e-6, atol=1e-6)
+        self.assertEqual(scores.shape, (2, 3, 3))
+
+    def test_mismatched_head_counts_raise_error(self) -> None:
+        """Multi-head Q and K tensors need the same number of heads."""
+        query = np.ones((2, 3, 1), dtype=np.float32)
+        key = np.ones((3, 3, 1), dtype=np.float32)
+
+        with self.assertRaises(ValueError):
+            self.score_computer.forward(query, key)
