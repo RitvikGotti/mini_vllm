@@ -63,3 +63,23 @@ class CausalMaskTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.mask.forward(np.ones((2, 2), dtype=np.int64))
 
+    def test_forward_masks_future_positions_for_every_head(self) -> None:
+        """Every head receives the same causal visibility rule."""
+        scaled_scores = np.array(
+            [
+                [[1.0, 2.0], [3.0, 4.0]],
+                [[5.0, 6.0], [7.0, 8.0]],
+            ],
+            dtype=np.float32,
+        )
+
+        masked_scores = self.mask.forward(scaled_scores)
+
+        expected = np.array(
+            [
+                [[1.0, -np.inf], [3.0, 4.0]],
+                [[5.0, -np.inf], [7.0, 8.0]],
+            ],
+            dtype=np.float32,
+        )
+        np.testing.assert_array_equal(masked_scores, expected)

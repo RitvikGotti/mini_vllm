@@ -1,4 +1,4 @@
-"""Connected multi-layer, single-head transformer language model."""
+"""Connected multi-layer transformer language model."""
 
 from dataclasses import dataclass
 
@@ -15,7 +15,7 @@ from llm_inference_engine.model.lm_head import LanguageModelHead
 from llm_inference_engine.model.normalization import LayerNorm
 from llm_inference_engine.model.positions import PositionEmbedding
 from llm_inference_engine.model.transformer_block import (
-    SingleHeadTransformerBlock,
+    TransformerBlock,
 )
 from llm_inference_engine.model.transformer_stack import TransformerStack
 from llm_inference_engine.utils.config import ModelConfig
@@ -56,7 +56,7 @@ class TinyTransformerWeights:
 
 
 class TinyTransformerModel:
-    """Run token IDs through single-head transformer layers to logits."""
+    """Run token IDs through multi-head transformer layers to logits."""
 
     def __init__(
         self,
@@ -66,11 +66,6 @@ class TinyTransformerModel:
         ffn_activation: ActivationFunction = relu,
     ) -> None:
         """Create the connected tiny model from configuration and weights."""
-        if config.num_attention_heads != 1:
-            raise ValueError(
-                "TinyTransformerModel requires num_attention_heads=1."
-            )
-
         token_embedding = TokenEmbedding(config, weights.token_embedding)
         position_embedding = PositionEmbedding(
             config,
@@ -81,7 +76,7 @@ class TinyTransformerModel:
             position_embedding,
         )
         transformer_blocks = tuple(
-            SingleHeadTransformerBlock(
+            TransformerBlock(
                 config,
                 query_weights=layer.query,
                 key_weights=layer.key,

@@ -158,3 +158,12 @@ class TinyTransformerModelTests(unittest.TestCase):
         logits = model.forward(np.array([0, 1, 2], dtype=np.int64))
 
         self.assertEqual(int(np.argmax(logits[-1])), 0)
+    def test_forward_supports_multiple_attention_heads(self) -> None:
+        """The connected model can split, attend, merge, and select a token."""
+        config = replace(self.config, num_attention_heads=2)
+        model = TinyTransformerModel(config, self.weights)
+
+        logits = model.forward(np.array([0, 1, 2], dtype=np.int64))
+
+        self.assertEqual(logits.shape, (3, 4))
+        self.assertEqual(int(np.argmax(logits[-1])), 3)

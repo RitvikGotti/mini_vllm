@@ -11,8 +11,10 @@ class AttentionSoftmax:
         self, masked_scores: NDArray[np.floating]
     ) -> NDArray[np.floating]:
         """Return numerically stable softmax probabilities for each score row."""
-        if masked_scores.ndim != 2:
-            raise ValueError("masked_scores must be a two-dimensional array.")
+        if masked_scores.ndim not in (2, 3):
+            raise ValueError(
+                "masked_scores must be a two- or three-dimensional array."
+            )
 
         if not np.issubdtype(masked_scores.dtype, np.floating):
             raise ValueError("masked_scores must use a floating-point dtype.")
@@ -20,7 +22,7 @@ class AttentionSoftmax:
         if np.any(np.isnan(masked_scores)) or np.any(np.isposinf(masked_scores)):
             raise ValueError("masked_scores must not contain NaN or positive infinity.")
 
-        if np.any(np.all(np.isneginf(masked_scores), axis=1)):
+        if np.any(np.all(np.isneginf(masked_scores), axis=-1)):
             raise ValueError("every query row must have at least one available key.")
 
         row_maximums = np.max(masked_scores, axis=-1, keepdims=True)

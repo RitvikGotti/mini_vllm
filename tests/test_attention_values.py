@@ -55,3 +55,30 @@ class AttentionValueMixerTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.mixer.forward(attention_weights, value)
+    def test_forward_mixes_values_inside_each_head(self) -> None:
+        """A head can use only the value vectors belonging to that head."""
+        attention_weights = np.array(
+            [
+                [[1.0, 0.0], [0.25, 0.75]],
+                [[1.0, 0.0], [0.5, 0.5]],
+            ],
+            dtype=np.float32,
+        )
+        value = np.array(
+            [
+                [[1.0], [3.0]],
+                [[10.0], [20.0]],
+            ],
+            dtype=np.float32,
+        )
+
+        context = self.mixer.forward(attention_weights, value)
+
+        expected = np.array(
+            [
+                [[1.0], [2.5]],
+                [[10.0], [15.0]],
+            ],
+            dtype=np.float32,
+        )
+        np.testing.assert_allclose(context, expected)

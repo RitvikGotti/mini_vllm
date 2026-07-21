@@ -60,3 +60,20 @@ class AttentionSoftmaxTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.softmax.forward(np.ones((2, 2), dtype=np.int64))
 
+    def test_forward_normalizes_each_head_independently(self) -> None:
+        """Every query row in every head becomes its own distribution."""
+        masked_scores = np.array(
+            [
+                [[1.0, -np.inf], [1.0, 2.0]],
+                [[3.0, -np.inf], [0.0, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+
+        weights = self.softmax.forward(masked_scores)
+
+        np.testing.assert_allclose(
+            np.sum(weights, axis=-1),
+            np.ones((2, 2), dtype=np.float32),
+        )
+        np.testing.assert_array_equal(weights[:, 0, 1], [0.0, 0.0])
