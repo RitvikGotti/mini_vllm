@@ -20,6 +20,9 @@ reference = [
     "transformers>=4.40,<5",
 ]
 
+[project.scripts]
+llm-infer = "llm_inference_engine.cli:main"
+
 [tool.setuptools.packages.find]
 include = ["llm_inference_engine*"]
 

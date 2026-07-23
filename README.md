@@ -10,6 +10,43 @@ the language-model head, greedy next-token selection, and autoregressive
 generation. It can load the official DistilGPT-2 configuration, tokenizer
 files, and safetensors checkpoint from a local directory.
 
+## Run locally
+
+Create and activate an isolated Python environment, then install the project:
+
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+```
+
+Download the official DistilGPT-2 files once:
+
+```shell
+mkdir -p models/distilgpt2
+BASE=https://huggingface.co/distilbert/distilgpt2/resolve/main
+
+for FILE in config.json vocab.json merges.txt model.safetensors
+do
+    curl -L --fail "$BASE/$FILE" -o "models/distilgpt2/$FILE"
+done
+```
+
+Generate one next token:
+
+```shell
+llm-infer "the cat sat"
+```
+
+The official checkpoint currently produces:
+
+```text
+the cat sat in
+```
+
+Generate more than one token with, for example,
+`llm-infer "the cat sat" --max-new-tokens 5`.
+
 ## Verify against Hugging Face
 
 The downloaded model files belong in `models/distilgpt2/`, which Git ignores.
